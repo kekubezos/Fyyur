@@ -27,7 +27,7 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 # TODO: connect to a local postgresql database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:69@localhost:5432/fyyurproject'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:123DATA12_@localhost:5432/fyyurproject'
 
 
 # ----------------------------------------------------------------------------#
@@ -115,22 +115,21 @@ def venues():
     # TODO: replace with real venues data.
     #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
     data = []
-    cities = Venue.query.with_entities(Venue.city).all() # we fetch the cities
-    print(cities)
-    # for city in set(cities):
-    #     obj = {
-    #         "city": city['city'],
-    #         "state": Venue.query.filter_by(city=city['city']).first().state,
-    #         "venues": [{
-    #             "id": venue.id,
-    #             "name": venue.name,
-    #             "num_upcoming_shows": len(Show.query.filter_by(venue_id=venue.id).all())
-    #         } for venue in Venue.query.filter_by(city=city).all()
-    #         ]
-    #     }
+    cities = Venue.query.with_entities(Venue.city, Venue.state).all() # we fetch the cities
+    for city, state in set(cities):
+        obj = {
+            "city": city,
+            "state": state,
+            "venues": [{
+                "id": venue.id,
+                "name": venue.name,
+                "num_upcoming_shows": len(Show.query.filter_by(venue_id=venue.id).all())
+            } for venue in Venue.query.filter_by(city=city).all()
+            ]
+        }
 
-        #append to data
-        # data.append(obj)
+        # append to data
+        data.append(obj)
     
     return render_template('pages/venues.html', areas=data);
 
