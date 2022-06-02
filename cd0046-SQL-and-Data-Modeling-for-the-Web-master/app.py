@@ -13,7 +13,7 @@ from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
 from flask_migrate import Migrate
-
+from datetime import datetime
 # ----------------------------------------------------------------------------#
 # App Config.
 # ----------------------------------------------------------------------------#
@@ -123,7 +123,7 @@ def venues():
             "venues": [{
                 "id": venue.id,
                 "name": venue.name,
-                "num_upcoming_shows": len(Show.query.filter_by(venue_id=venue.id).all())
+                "num_upcoming_shows": len(Show.query.filter(Show.start_time > datetime.utcnow(), Show.venue_id==venue.id).all())
             } for venue in Venue.query.filter_by(city=city).all()
             ]
         }
@@ -166,6 +166,8 @@ def show_venue(venue_id):
     # shows the venue page with the given venue_id
     venue = Venue.query.filter_by(id=venue_id).first()
     # TODO: replace with real venue data from the venues table, using venue_id
+    past_shows =  Show.query.filter(Show.start_time < datetime.utcnow(), Show.venue_id==venue.id).all()
+    upcoming_shows =  Show.query.filter(Show.start_time > datetime.utcnow(), Show.venue_id==venue.id).all()
     data = {
         "id": venue.id,
         "name": venue.name,
@@ -180,14 +182,14 @@ def show_venue(venue_id):
         "seeking_description": venue.seeking_description,
         "image_link": venue.image_link,
         "past_shows": [{
-            "artist_id": 4,
-            "artist_name": "Guns N Petals",
-            "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
-            "start_time": "2019-05-21T21:30:00.000Z"
-        }],
+            "artist_id": show.artist_id,
+            "artist_name": Artist.query.filter_by(id=show.artist_id).first().name,
+            "artist_image_link": Artist.query.filter_by(id=show.artist_id).first().image_link,
+            "start_time": show.start_time
+        } for show in past_shows],
         "upcoming_shows": [],
-        "past_shows_count": 1,
-        "upcoming_shows_count": 0,
+        "past_shows_count":  len(past_shows),
+        "upcoming_shows_count":  len(upcoming_shows),
     }
     return render_template('pages/show_venue.html', venue=data)
 
@@ -275,7 +277,7 @@ def search_artists():
                 {
                     "id": artist.id,
                     "name": artist.name,
-                    "num_upcoming_shows": 0,
+                    "num_upcoming_shows": len(Show.query.filter(Show.start_time > datetime.utcnow(), Show.artist_id==artist.id).all()) ,
                 } for artist in artists
             ]
         }
@@ -292,6 +294,8 @@ def search_artists():
 def show_artist(artist_id):
     # shows the artist page with the given artist_id
     artist = Artist.query.filter_by(id=artist_id).first()
+    past_shows =  Show.query.filter(Show.start_time < datetime.utcnow(), Show.venue_id==artist.id).all()
+    upcoming_shows =  Show.query.filter(Show.start_time > datetime.utcnow(), Show.venue_id==artist.id).all()
     # TODO: replace with real artist data from the artist table, using artist_id
     data = {
         "id": artist.id,
@@ -306,14 +310,14 @@ def show_artist(artist_id):
         "seeking_description": artist.seeking_description,
         "image_link": artist.image_link,
         "past_shows": [{
-            "venue_id": Venue.id,
-            "venue_name": Venue.name,
-            "venue_image_link": Venue.image_link,
-            "start_time": "2019-05-21T21:30:00.000Z"
-        }],
+            "venue_id":show.venue_id,
+            "venue_name": Venue.query.filter_by(id=show.venue_id).first().name,
+            "venue_image_link": Venue.query.filter_by(id=show.venue_id).first().image_link,
+            "start_time": show.start_time
+        } for show in past_shows],
         "upcoming_shows": [],
-        "past_shows_count": 1,
-        "upcoming_shows_count": 0,
+        "past_shows_count": len(past_shows),
+        "upcoming_shows_count": len(upcoming_shows),
     }
 
     return render_template('pages/show_artist.html', artist=data)
@@ -417,14 +421,25 @@ def create_artist_submission():
 def shows():
     # displays list of shows at /shows
     # TODO: replace with real venues data.
-    data = {
-        "venue_id": Venue.id,
-        "venue_name": Venue.name,
-        "artist_id": Artist.id,
-        "artist_name": Artist,
-        "artist_image_link": Artist.image_link,
-        "start_time": "2019-05-21T21:30:00.000Z"
-    }
+    shows = Show.query.all()
+    data = [
+        {
+            "venue_id": show.venue_id,
+            "venue_name": Venue.query.filter_by(id=show.venue_id).first().name,
+            "artist_id": show.artist_id,
+            "artist_name": Artist.query.filter_by(id=show.artist_id).first().name,
+            "artist_image_link": Artist.query.filter_by(id=show.artist_id).first().image_link,
+            "start_time": show.start_time
+        } for show in shows
+    ]
+    # data = {
+    #     "venue_id": Venue.id,
+    #     "venue_name": Venue.name,
+    #     "artist_id": Artist.id,
+    #     "artist_name": Artist,
+    #     "artist_image_link": Artist.image_link,
+    #     "start_time": "2019-05-21T21:30:00.000Z"
+    # }
     return render_template('pages/shows.html', shows=data)
 
 
