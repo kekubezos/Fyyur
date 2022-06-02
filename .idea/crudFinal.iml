@@ -12,7 +12,8 @@
     <option name="TEMPLATE_CONFIGURATION" value="Jinja2" />
     <option name="TEMPLATE_FOLDERS">
       <list>
-        <option value="$MODULE_DIR$/../crudFinal\templates" />
+        <option value="$MODULE_DIR$/templates" />
+        <option value="$MODULE_DIR$/cd0046-SQL-and-Data-Modeling-for-the-Web-master/templates" />
       </list>
     </option>
   </component>
