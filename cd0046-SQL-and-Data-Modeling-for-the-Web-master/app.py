@@ -186,7 +186,7 @@ def show_venue(venue_id):
             "artist_name": Artist.query.filter_by(id=show.artist_id).first().name,
             "artist_image_link": Artist.query.filter_by(id=show.artist_id).first().image_link,
             "start_time": str(show.start_time)
-        } for show in past_shows],
+        } for show in past_shows if past_shows],
         "upcoming_shows": [],
         "past_shows_count":  len(past_shows),
         "upcoming_shows_count":  len(upcoming_shows),
@@ -314,7 +314,7 @@ def show_artist(artist_id):
             "venue_name": Venue.query.filter_by(id=show.venue_id).first().name,
             "venue_image_link": Venue.query.filter_by(id=show.venue_id).first().image_link,
             "start_time": str(show.start_time)
-        } for show in past_shows],
+        } for show in past_shows if past_shows],
         "upcoming_shows": [],
         "past_shows_count": len(past_shows),
         "upcoming_shows_count": len(upcoming_shows),
