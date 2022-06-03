@@ -72,7 +72,11 @@
 	</div>
 </section>
 
-<a href="/artists/{{ artist.id }}/edit"><button class="btn btn-primary btn-lg">Edit</button></a>
+<a href="/artists/{{ artist.id }}/edit"><button class="btn btn-primary btn-lg" aria-label="Edit artist: {{ artist
+.name }}">Edit Artist</button></a>
+
+<a href="/artists/{{ artist.id }}/delete"><button class="btn btn-danger btn-lg" aria-label="Delete artist: {{ artist
+.name }}">Delete Artist</button></a>
+
 
 {% endblock %}
-
