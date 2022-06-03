@@ -148,7 +148,7 @@ def search_venues():
                 {
                     "id": venue.id,
                     "name": venue.name,
-                    "num_upcoming_shows": 0,
+                    "num_upcoming_shows": len(Show.query.filter(Show.start_time > datetime.utcnow(), Show.venue_id==venue.id).all()),
                 } for venue in venues
             ]
         }
@@ -171,7 +171,7 @@ def show_venue(venue_id):
     data = {
         "id": venue.id,
         "name": venue.name,
-        "genres": venue.genres,
+        "genres": venue.genres.replace('{', '').replace('}', '').split(','),
         "address": venue.address,
         "city": venue.city,
         "state": venue.state,
@@ -187,7 +187,7 @@ def show_venue(venue_id):
             "artist_image_link": Artist.query.filter_by(id=show.artist_id).first().image_link,
             "start_time": str(show.start_time)
         } for show in past_shows if past_shows],
-        "upcoming_shows": [],
+        "upcoming_shows": upcoming_shows,
         "past_shows_count":  len(past_shows),
         "upcoming_shows_count":  len(upcoming_shows),
     }
@@ -206,7 +206,10 @@ def create_venue_form():
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
     # TODO: insert form data as a new Venue record in the db, instead
-    new_venue = Venue(**request.form)
+    #fixing the 'y' on the request form
+    form_data = VenueForm(request.form)
+
+    new_venue = Venue(**form_data.data)
     try:
         db.session.add(new_venue)
         db.session.commit()
@@ -294,8 +297,8 @@ def search_artists():
 def show_artist(artist_id):
     # shows the artist page with the given artist_id
     artist = Artist.query.filter_by(id=artist_id).first()
-    past_shows =  Show.query.filter(Show.start_time < datetime.utcnow(), Show.venue_id==artist.id).all()
-    upcoming_shows =  Show.query.filter(Show.start_time > datetime.utcnow(), Show.venue_id==artist.id).all()
+    past_shows =  Show.query.filter(Show.start_time < datetime.utcnow(), Show.artist_id==artist.id).all()
+    upcoming_shows =  Show.query.filter(Show.start_time > datetime.utcnow(), Show.artist_id==artist.id).all()
     # TODO: replace with real artist data from the artist table, using artist_id
     data = {
         "id": artist.id,
@@ -315,7 +318,7 @@ def show_artist(artist_id):
             "venue_image_link": Venue.query.filter_by(id=show.venue_id).first().image_link,
             "start_time": str(show.start_time)
         } for show in past_shows if past_shows],
-        "upcoming_shows": len(upcoming_shows),
+        "upcoming_shows": upcoming_shows,
         "past_shows_count": len(past_shows),
         "upcoming_shows_count": len(upcoming_shows),
     }
@@ -395,7 +398,8 @@ def create_artist_submission():
     # called upon submitting the new artist listing form
     # TODO: insert form data as a new Venue record in the db, instead
     # TODO: modify data to be the data object returned from db insertion
-    new_artist = Artist(**request.form)
+    form_data = ArtistForm(request.form)
+    new_artist = Artist(**form_data.data)
     try:
         db.session.add(new_artist)
         db.session.commit()
@@ -454,7 +458,8 @@ def create_shows():
 def create_show_submission():
     # called to create new shows in the db, upon submitting new show listing form
     # TODO: insert form data as a new Show record in the db, instead
-    new_show = Show(**request.form)
+    form_data = ShowForm(request.form)
+    new_show = Show(**form_data.data)
     try:
         db.session.add(new_show)
         db.session.commit()
