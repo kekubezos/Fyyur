@@ -1,6 +1,7 @@
 # ----------------------------------------------------------------------------#
 # Imports
 # ----------------------------------------------------------------------------#
+import collections
 import sys
 import json
 import dateutil.parser
@@ -14,9 +15,12 @@ from flask_wtf import Form
 from forms import *
 from flask_migrate import Migrate
 from datetime import datetime
+
 # ----------------------------------------------------------------------------#
 # App Config.
 # ----------------------------------------------------------------------------#
+collections.Callable = collections.abc.Callable
+
 app = Flask(__name__)
 moment = Moment(app)
 
@@ -27,7 +31,7 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 # TODO: connect to a local postgresql database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:123DATA12_@localhost:5432/fyyurproject'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:69@localhost:5432/fyyurproject'
 
 
 # ----------------------------------------------------------------------------#
@@ -50,6 +54,7 @@ class Venue(db.Model):
     website_link = db.Column(db.String(120))
     seeking_talent = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(120))
+    # shows = db.relationship("Show", backref="venues", lazy=False, cascade="all, delete-orphan")
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -68,6 +73,7 @@ class Artist(db.Model):
     website_link = db.Column(db.String(120))
     seeking_venue = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(120))
+    # shows = db.relationship("Show", backref="artists", lazy=False, cascade="all, delete-orphan")
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -123,7 +129,8 @@ def venues():
             "venues": [{
                 "id": venue.id,
                 "name": venue.name,
-                "num_upcoming_shows": len(Show.query.filter(Show.start_time > datetime.utcnow(), Show.venue_id==venue.id).all())
+                "num_upcoming_shows": len(
+                    Show.query.filter(Show.start_time > datetime.utcnow(), Show.venue_id == venue.id).all())
             } for venue in Venue.query.filter_by(city=city).all()
             ]
         }
@@ -148,7 +155,8 @@ def search_venues():
                 {
                     "id": venue.id,
                     "name": venue.name,
-                    "num_upcoming_shows": len(Show.query.filter(Show.start_time > datetime.utcnow(), Show.venue_id==venue.id).all()),
+                    "num_upcoming_shows": len(Show.query.filter(Show.start_time > datetime.utcnow(), Show.venue_id
+                                                                == venue.id).all()),
                 } for venue in venues
             ]
         }
@@ -166,8 +174,8 @@ def show_venue(venue_id):
     # shows the venue page with the given venue_id
     venue = Venue.query.filter_by(id=venue_id).first()
     # TODO: replace with real venue data from the venues table, using venue_id
-    past_shows =  Show.query.filter(Show.start_time < datetime.utcnow(), Show.venue_id==venue.id).all()
-    upcoming_shows =  Show.query.filter(Show.start_time > datetime.utcnow(), Show.venue_id==venue.id).all()
+    past_shows = Show.query.filter(Show.start_time < datetime.utcnow(), Show.venue_id == venue.id).all()
+    upcoming_shows = Show.query.filter(Show.start_time > datetime.utcnow(), Show.venue_id == venue.id).all()
     data = {
         "id": venue.id,
         "name": venue.name,
@@ -188,8 +196,8 @@ def show_venue(venue_id):
             "start_time": str(show.start_time)
         } for show in past_shows if past_shows],
         "upcoming_shows": upcoming_shows,
-        "past_shows_count":  len(past_shows),
-        "upcoming_shows_count":  len(upcoming_shows),
+        "past_shows_count": len(past_shows),
+        "upcoming_shows_count": len(upcoming_shows),
     }
     return render_template('pages/show_venue.html', venue=data)
 
@@ -206,10 +214,8 @@ def create_venue_form():
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
     # TODO: insert form data as a new Venue record in the db, instead
-    #fixing the 'y' on the request form
-    form_data = VenueForm(request.form)
-
-    new_venue = Venue(**form_data.data)
+    # fixing the 'y' on the request form
+    new_venue = Venue(**request.form)
     try:
         db.session.add(new_venue)
         db.session.commit()
@@ -271,7 +277,7 @@ def delete_venue(venue_id):
     # TODO: Complete this endpoint for taking a venue_id, and using
     # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
     try:
-        db.session.query(Show).filter(Show.artist_id==venue_id).delete() # to take care of FK
+        db.session.query(Show).filter(Show.artist_id == venue_id).delete()  # to take care of FK
         venue = Venue.query.get(venue_id)
         db.session.delete(venue)
         db.session.commit()
@@ -296,8 +302,8 @@ def artists():
     artists1 = Artist.query.all()  # we fetch the artists
     for artist in artists1:
         obj = {
-                "id": artist.id,
-                "name": artist.name
+            "id": artist.id,
+            "name": artist.name
         }
 
         # append to data
@@ -330,7 +336,8 @@ def search_artists():
                 {
                     "id": artist.id,
                     "name": artist.name,
-                    "num_upcoming_shows": len(Show.query.filter(Show.start_time > datetime.utcnow(), Show.artist_id==artist.id).all()) ,
+                    "num_upcoming_shows": len(
+                        Show.query.filter(Show.start_time > datetime.utcnow(), Show.artist_id == artist.id).all()),
                 } for artist in artists
             ]
         }
@@ -347,8 +354,8 @@ def search_artists():
 def show_artist(artist_id):
     # shows the artist page with the given artist_id
     artist = Artist.query.filter_by(id=artist_id).first()
-    past_shows =  Show.query.filter(Show.start_time < datetime.utcnow(), Show.artist_id==artist.id).all()
-    upcoming_shows =  Show.query.filter(Show.start_time > datetime.utcnow(), Show.artist_id==artist.id).all()
+    past_shows = Show.query.filter(Show.start_time < datetime.utcnow(), Show.artist_id == artist.id).all()
+    upcoming_shows = Show.query.filter(Show.start_time > datetime.utcnow(), Show.artist_id == artist.id).all()
     # TODO: replace with real artist data from the artist table, using artist_id
     data = {
         "id": artist.id,
@@ -363,7 +370,7 @@ def show_artist(artist_id):
         "seeking_description": artist.seeking_description,
         "image_link": artist.image_link,
         "past_shows": [{
-            "venue_id":show.venue_id,
+            "venue_id": show.venue_id,
             "venue_name": Venue.query.filter_by(id=show.venue_id).first().name,
             "venue_image_link": Venue.query.filter_by(id=show.venue_id).first().image_link,
             "start_time": str(show.start_time)
@@ -424,8 +431,8 @@ def edit_artist_submission(artist_id):
 @app.route('/artists/<artist_id>/delete', methods=['GET'])
 def delete_artist(artist_id):
     try:
-        #delete all FK first
-        db.session.query(Show).filter(Show.artist_id==artist_id).delete() # to take care of FK
+        # delete all FK first
+        db.session.query(Show).filter(Show.artist_id == artist_id).delete()  # to take care of FK
         artist = Artist.query.get(artist_id)
         db.session.delete(artist)
         db.session.commit()
@@ -438,6 +445,7 @@ def delete_artist(artist_id):
         db.session.close()
 
     return redirect(url_for('index'))
+
 
 #  Create Artist
 #  ----------------------------------------------------------------
@@ -453,8 +461,7 @@ def create_artist_submission():
     # called upon submitting the new artist listing form
     # TODO: insert form data as a new Venue record in the db, instead
     # TODO: modify data to be the data object returned from db insertion
-    form_data = ArtistForm(request.form)
-    new_artist = Artist(**form_data.data)
+    new_artist = Artist(**request.form)
     try:
         db.session.add(new_artist)
         db.session.commit()
@@ -513,8 +520,7 @@ def create_shows():
 def create_show_submission():
     # called to create new shows in the db, upon submitting new show listing form
     # TODO: insert form data as a new Show record in the db, instead
-    form_data = ShowForm(request.form)
-    new_show = Show(**form_data.data)
+    new_show = Show(**request.form)
     try:
         db.session.add(new_show)
         db.session.commit()
